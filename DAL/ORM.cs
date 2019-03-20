@@ -162,38 +162,7 @@ namespace ArachnidCreations.DevTools
             }
             return "";
         }
-        public static string Insert<T>(T userClass, string tablename)
-        {
-            return Insert(userClass, tablename, "", false, GetDT(tablename));
-        }
-        public static string Insert<T>(T userClass)
-        {
-            // Using reflection.
-            System.Attribute[] attrs = System.Attribute.GetCustomAttributes(userClass.GetType());  // Reflection. 
-            var TableName = "";
-            foreach (System.Attribute attr in attrs)
-            {
-                if (attr is DBTable)
-                {
-                    TableName = ((DBTable)attr).GetName();
-                }
-            }
-            return Insert(userClass, TableName, "", false, GetDT(TableName));
-        }
-        public static string Insert(object userClass, bool returnID)
-        {
-            // Using reflection.
-            System.Attribute[] attrs = System.Attribute.GetCustomAttributes(userClass.GetType());  // Reflection. 
-            var TableName = "";
-            foreach (System.Attribute attr in attrs)
-            {
-                if (attr is DBTable)
-                {
-                    TableName = ((DBTable)attr).GetName();
-                }
-            }
-            return Insert(userClass, TableName, "", returnID, GetDT(TableName));
-        }
+
         /// <summary>
         /// Automatically assumes your object and your table has an "id" column/property. If it doesnt. This wont work.
         /// </summary>

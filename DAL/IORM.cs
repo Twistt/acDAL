@@ -28,15 +28,15 @@ namespace ArachnidCreations.DevTools
         /// <param name="returnId"></param>
         /// <param name="dt">Only pass null if your table matches the class EXACTLY. DataTable of structure defined in the getTableStructureData sql statement. Or the TableStructure object.</param>
         /// <returns></returns>
-        public DataTable Insert(object userClass, string tablename, string fieldprefix = "", bool returnId = false, DataTable dt = null)
+        public DataTable Insert<T>(T userClass, bool returnId = false)
         {
             string pk = string.Empty;
-            //Compile a List<T> of colmumn names (with datatypes) from the target table
-            if (dt == null)
-            {
-                dt = GetDT(tablename);
-            }
+            string tableName = GetTableName<T>();
+            DataTable dt = null;
+            
+            dt = GetDT(tableName);
 
+            //Compile a List<T> of colmumn names (with datatypes) from the target table
             List<string> cols = new List<string>();
             if (dt != null)
             {
@@ -47,7 +47,7 @@ namespace ArachnidCreations.DevTools
             }
             if (!cols.Contains("id") && !cols.Contains("ID") && !cols.Contains("Id"))
             {
-                string pkt = GetPrimaryKey(tablename);
+                string pkt = GetPrimaryKey(tableName);
                 if (pkt != null) pk = pkt.ToLower();
             }
             else pk = "id";
@@ -87,7 +87,7 @@ namespace ArachnidCreations.DevTools
                 }
             }
             //Console.Write(matchedProps);
-            sql.Append(string.Format("insert into {0} (", tablename));
+            sql.Append(string.Format("insert into {0} (", tableName));
             int propcount = 0;
             foreach (PropertyInfo prop in matchedProps)
             {
@@ -154,14 +154,10 @@ namespace ArachnidCreations.DevTools
             if (returnId == true) sql.Append(" select SCOPE_IDENTITY();");
             return dal.Load(sql.ToString());
         }
-        public DataTable Insert(object userClass, string tablename)
-        {
-            return Insert(userClass, tablename, "", false, GetDT(tablename));
-        }
-        public DataTable Insert(object userClass)
+        public string GetTableName<T>()
         {
             // Using reflection.
-            System.Attribute[] attrs = System.Attribute.GetCustomAttributes(userClass.GetType());  // Reflection. 
+            System.Attribute[] attrs = System.Attribute.GetCustomAttributes(typeof(T));  // Reflection. 
             var TableName = "";
             foreach (System.Attribute attr in attrs)
             {
@@ -170,22 +166,10 @@ namespace ArachnidCreations.DevTools
                     TableName = ((DBTable)attr).GetName();
                 }
             }
-            return Insert(userClass, TableName, "", false, GetDT(TableName));
+            if (TableName == string.Empty) TableName = typeof(T).Name;
+            return TableName;
         }
-        public DataTable Insert(object userClass, bool returnID)
-        {
-            // Using reflection.
-            System.Attribute[] attrs = System.Attribute.GetCustomAttributes(userClass.GetType());  // Reflection. 
-            var TableName = "";
-            foreach (System.Attribute attr in attrs)
-            {
-                if (attr is DBTable)
-                {
-                    TableName = ((DBTable)attr).GetName();
-                }
-            }
-            return Insert(userClass, TableName, "", returnID, GetDT(TableName));
-        }
+
         /// <summary>
         /// Automatically assumes your object and your table has an "id" column/property. If it doesnt. This wont work.
         /// </summary>
@@ -194,8 +178,10 @@ namespace ArachnidCreations.DevTools
         /// <param name="fieldprefix"></param>
         /// <param name="dt"></param>
         /// <returns></returns>
-        public string Update(object userClass, string tablename, string primarykey = "", DataTable dt = null)
+        public string Update<T>(T userClass,DataTable dt = null)
         {
+            string tablename = GetTableName<T>();
+            string primarykey = GetPrimaryKey(tablename);
             if (primarykey == "") primarykey = "id";
             if (dt == null)
             {
@@ -287,20 +273,7 @@ namespace ArachnidCreations.DevTools
             dal.Exec(sql.ToString());
             return sql.ToString();
         }
-        public string Update(object userClass)
-        {
-            // Using reflection.
-            System.Attribute[] attrs = System.Attribute.GetCustomAttributes(userClass.GetType());  // Reflection. 
-            var TableName = "";
-            foreach (System.Attribute attr in attrs)
-            {
-                if (attr is DBTable)
-                {
-                    TableName = ((DBTable)attr).GetName();
-                }
-            }
-            return Update(userClass, TableName, GetPrimaryKey(TableName), GetDT(TableName));
-        }
+
         private DataTable GetDT(string tablename)
         {
             DataTable dt = null;
@@ -825,20 +798,7 @@ namespace ArachnidCreations.DevTools
             }
             return instance;
         }
-        public string GetTableName<T>()
-        {
-            // Using reflection.
-            System.Attribute[] attrs = System.Attribute.GetCustomAttributes(typeof(T));  // Reflection. 
-            var TableName = "";
-            foreach (System.Attribute attr in attrs)
-            {
-                if (attr is DBTable)
-                {
-                    TableName = ((DBTable)attr).GetName();
-                }
-            }
-            return TableName;
-        }
+
         public string InsertsFromDT(DataTable dt, string tableName)
         {
 
@@ -1020,8 +980,8 @@ namespace ArachnidCreations.DevTools
         { //where appid = @key and code = @code
             if (whereClause.Length > 0)
             {
-                var insertSQL = Insert(userObj, TableName);
-                var updateSQL = Update(userObj, TableName, PrimaryKey);
+                var insertSQL = Insert(userObj);
+                var updateSQL = Update(userObj);
                 var sql = string.Format(@"
                 begin tran
                 if exists (select * from {0} with (updlock,serializable) {3})
@@ -1037,16 +997,12 @@ namespace ArachnidCreations.DevTools
             }
             return "";
         }
-        public string generateCreateSQL<T>(string tablename = "", string fieldprefix = "")
+        public string generateCreateSQL<T>()
         {
             string returnSQL = string.Empty;
             Type tType = typeof(T);
             Attribute[] attrs = Attribute.GetCustomAttributes(tType);  // Reflection. 
-            if (tablename == string.Empty)
-            {
-                var attr = attrs.Where(a => a is DBTable).FirstOrDefault();
-                tablename = ((DBTable)attr).GetName();
-            }
+            string tablename = GetTableName<T>();
             returnSQL += (string.Format("CREATE TABLE {0} ( ", tablename));
             int icount = 0;
             string comma = "";
@@ -1064,40 +1020,40 @@ namespace ArachnidCreations.DevTools
                 if (prop.PropertyType.ToString() == "System.Char")
                 {
                     string sqlvartype = "Varchar(250)";
-                    returnSQL += (string.Format("[{1}{2}] {3}{0}", comma, fieldprefix, prop.Name, sqlvartype));
+                    returnSQL += (string.Format("[{1}] {2}{0}", comma,  prop.Name, sqlvartype));
                 }
                 else if (prop.PropertyType.ToString() == "System.String")
                 {
                     string sqlvartype = "varchar(250)";
-                    returnSQL += (string.Format("[{1}{2}] {3}{0}", comma, fieldprefix, prop.Name, sqlvartype));
+                    returnSQL += (string.Format("[{1}] {2}{0}", comma,  prop.Name, sqlvartype));
                 }
                 else if (prop.PropertyType.ToString() == "System.Int64")
                 {
                     string sqlvartype = "[int]";
                     sqlvartype = (pk != null) ? "[int] IDENTITY(1,1) PRIMARY KEY" : sqlvartype;
-                    returnSQL += (string.Format("[{1}{2}] {3}{0}", comma, fieldprefix, prop.Name, sqlvartype));
+                    returnSQL += (string.Format("[{1}] {2}{0}", comma,  prop.Name, sqlvartype));
                 }
                 else if (prop.PropertyType.ToString() == "System.Int32")
                 {
                     string sqlvartype = "[int]";
                     sqlvartype = (pk != null) ? "[int] IDENTITY(1,1) PRIMARY KEY" : sqlvartype;
-                    returnSQL += (string.Format("[{1}{2}] {3}{0}", comma, fieldprefix, prop.Name, sqlvartype));
+                    returnSQL += (string.Format("[{1}] {2}{0}", comma,  prop.Name, sqlvartype));
                 }
                 else if (prop.PropertyType.ToString() == "System.Single")//float
                 {
                     string sqlvartype = "[float]";
                     sqlvartype = (pk != null) ? "[float] IDENTITY(1,1) PRIMARY KEY" : sqlvartype;
-                    returnSQL += (string.Format("[{1}{2}] {3}{0}", comma, fieldprefix, prop.Name, sqlvartype));
+                    returnSQL += (string.Format("[{1}] {2}{0}", comma,  prop.Name, sqlvartype));
                 }
                 else if (prop.PropertyType.ToString() == "System.Boolean")//float
                 {
                     string sqlvartype = "[bit]";
-                    returnSQL += (string.Format("[{1}{2}] {3}{0}", comma, fieldprefix, prop.Name, sqlvartype));
+                    returnSQL += (string.Format("[{1}] {2}{0}", comma,  prop.Name, sqlvartype));
                 }
                 else if (prop.PropertyType.ToString() == "System.Drawing.Image")//float
                 {
                     string sqlvartype = "varchar(250)";
-                    returnSQL += (string.Format("[{1}{2}] {3}{0}", comma, fieldprefix, prop.Name, sqlvartype));
+                    returnSQL += (string.Format("[{1}] {2}{0}", comma, prop.Name, sqlvartype));
                 }
             }
             returnSQL += (string.Format(");", tablename));

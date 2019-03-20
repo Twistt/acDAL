@@ -45,10 +45,6 @@
     </AssemblyOriginatorKeyFile>
   </PropertyGroup>
   <ItemGroup>
-    <Reference Include="Newtonsoft.Json, Version=8.0.0.0, Culture=neutral, PublicKeyToken=30ad4fe6b2a6aeed, processorArchitecture=MSIL">
-      <HintPath>..\packages\Newtonsoft.Json.8.0.2\lib\net45\Newtonsoft.Json.dll</HintPath>
-      <Private>True</Private>
-    </Reference>
     <Reference Include="System" />
     <Reference Include="System.Configuration" />
     <Reference Include="System.Core" />
@@ -72,27 +68,9 @@
     <Compile Include="DAL\IORM.cs" />
     <Compile Include="DAL\ORM.cs" />
     <Compile Include="DAL\DBPrimaryKey.cs" />
-    <Compile Include="HistoryAudit.cs" />
-    <Compile Include="InstantObject.cs" />
-    <Compile Include="Properties\AssemblyInfo.cs" />
-    <Compile Include="SmartError.cs" />
-    <Compile Include="XML\ACXML.cs" />
-    <Compile Include="XML\ACXMLAttribute.cs" />
-    <Compile Include="XML\ACXMLFormat.cs" />
-    <Compile Include="XML\ACXMLIgnore.cs" />
-    <Compile Include="XML\ACXMLName.cs" />
-    <Compile Include="XML\ACXMLParentWrapper.cs" />
-    <Compile Include="XML\ACXMLRequired.cs" />
-    <Compile Include="XML\iACXMLDoc.cs" />
-    <Compile Include="XML\iACXMLNode.cs" />
   </ItemGroup>
   <ItemGroup>
-    <None Include="arachnidcreations.pfx" />
-    <None Include="packages.config" />
-    <None Include="Properties\build.props" />
-  </ItemGroup>
-  <ItemGroup>
-    <Content Include="XML\Readme.txt" />
+    <Folder Include="Properties\" />
   </ItemGroup>
   <Import Project="$(MSBuildToolsPath)\Microsoft.CSharp.targets" />
   <!-- To modify your build process, add your task inside one of the targets below and uncomment it. 

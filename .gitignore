@@ -3,3 +3,7 @@
 ################################################################################
 
 *.suo
+/.vs/ArachnidCreations.DevTools/v15/Server/sqlite3
+/.vs
+/bin/Debug
+/obj
